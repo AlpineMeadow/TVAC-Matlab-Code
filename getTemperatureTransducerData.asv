@@ -1,0 +1,74 @@
+function getTemperatureTransducerData(handles, fig, ThermoDAQ, ...
+    startHourStr, startMinuteStr, startSecondStr, timeRemaining)
+
+
+    %Set up some persistent variables.
+    persistent thermo1
+    persistent thermo2
+    persistent thermo3
+    persistent thermo4
+    
+    %Pull the params vector out of the handles structure.
+    params = handles.params;
+
+    %Lets make the parameters more understandable.
+    VToT1Slope = params(1);  %Units are in Celcius/Volt.
+    VToT1Intercept = params(2);  %Units are in Celcius.
+    VToT2Slope = params(3);  %Units are in Celcius/Volt.
+    VToT2Intercept = params(4);  %Units are in Celcius.
+    VToT3Slope = params(5);  %Units are in Celcius/Volt.
+    VToT3Intercept = params(6);  %Units are in Celcius.
+    VToT4Slope = params(7);  %Units are in Celcius/Volt.
+    VToT4Intercept = params(8);  %Units are in Celcius.
+
+    sampleRate = params(9); %Units are in samples per second.
+    %numSecondsToCollectData = params(10);
+
+    %Set the data rate using the number of points divided by the sweep
+    %duration.
+    ThermoDAQ.s.Rate = sampleRate;
+
+    %Read the data from the DAQ.  The outputs are data = actual data
+    %read in from the device. 
+    [data, ~, ~] = read(ThermoDAQ.s, ThermoDAQ.s.ScansAvailableFcnCount,  'OutputFormat', 'Matrix');
+    
+    %Since the data and time vectors are written as the same voltage value twice we will
+    %extract every other value.                
+    voltage1 = data(:, 1); 
+    voltage2 = data(:, 2);
+    voltage3 = data(:, 3);     
+    voltage4 = data(:, 4); 
+   
+    %Now convert from voltage to temperature by multiplying by the
+    %conversion factor and find the mean.    
+    averageTemp1 = VToT1Slope*mean(voltage1) + VToT1Intercept;
+    averageTemp2 = VToT2Slope*mean(voltage2) + VToT2Intercept;
+    averageTemp3 = VToT3Slope*mean(voltage3) + VToT3Intercept;
+    averageTemp4 = VToT4Slope*mean(voltage4) + VToT4Intercept;
+
+    %Make some strings of the temperature.
+    averageTemp1Str = sprintf('Average Temperature : %6.2f ', averageTemp1);
+    averageTemp2Str = sprintf('Average Temperature : %6.2f ', averageTemp2);
+    averageTemp3Str = sprintf('Average Temperature : %6.2f ', averageTemp3);
+    averageTemp4Str = sprintf('Average Temperature : %6.2f ', averageTemp4);
+    
+    %Concatinate the thermo values.  This is essentially a running average.
+    thermo1 = vertcat(thermo1, averageTemp1);
+    thermo2 = vertcat(thermo2, averageTemp2);
+    thermo3 = vertcat(thermo3, averageTemp3);
+    thermo4 = vertcat(thermo4, averageTemp4);
+    
+    %Make plots of the outputs from the ESA.
+     totalTime = handles.dataCollectionTime.Value
+
+     if  (timeRemaining == 0) :
+        generateTVACPlots(fig, thermo1, thermo2, thermo3, thermo4, ...
+            averageTemp1Str,   averageTemp2Str,   averageTemp3Str,   averageTemp4Str, timeRemaining);
+     end
+     
+    saveTVACData(startHourStr, startMinuteStr, startSecondStr, averageTemp1, averageTemp2, ...
+        averageTemp3, averageTemp4);
+   
+end  %End of the function getThermocoupleData.m
+
+    

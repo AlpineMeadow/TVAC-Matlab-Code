@@ -1,0 +1,34 @@
+function dataCollectionTime =  getTVACDataCollectionTime(handles, timeToCollectData, row, ...
+        column, timeToCollectDataIndex)
+%This function will get the handle for each of the components in the graphical user interface. 
+%This function is called by getTVACHandles.m
+
+dataCollectionTime = uieditfield(handles.gl, 'numeric');
+dataCollectionTime.Value = timeToCollectData;
+dataCollectionTime.Layout.Row = row;
+dataCollectionTime.Layout.Column = column;
+dataCollectionTime.HorizontalAlignment = 'center';
+dataCollectionTime.FontSize = 24;
+dataCollectionTime.FontWeight = 'bold';
+dataCollectionTime.ValueChangedFcn = {@changeDataCollectionTime, dataCollectionTime, ...
+    timeToCollectDataIndex};
+
+end %End of the function getTVACDataCollectionTime.m
+
+function changeDataCollectionTime(src, event, dataCollectionTime,  timeToCollectDataIndex)
+%This function will put the new parameter into the param vector.
+    
+%Get the data out of the application data of the figure object.
+handles = guidata(src);
+
+%Set the new value into the params vector.
+handles.params(timeToCollectDataIndex) = dataCollectionTime.Value;
+
+%Set the new value into the dataCollectionTime handle.
+dataCollectionTime.Value = event.Value;
+    
+%Now store the new values back into the application data of the figure object.
+guidata(src, handles);
+    
+end  %End of the function changeDataCollectionTime.m
+
